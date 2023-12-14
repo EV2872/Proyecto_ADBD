@@ -1,8 +1,12 @@
 /*
- * Autores: Alejandro García Bautista, Evian Concepcion Peña, Edwin
+ * Autores: 
+ *          Alejandro García Bautista 
+ *          Evian Concepcion Peña 
+ *          Edwin Plasencia Hernández
  * Asignatura: Administración y Diseño de Bases de Datos
- * Resumen: Script que hace uso de otros script para generar la base de datos de viveros
- *          así como poblar sus tablas y hacer ciertas consultas
+ * Proyecto Final de la Asignatura
+ * Resumen: Script que hace uso de otros script para generar la base de datos de salud tinerfeña
+ *          así como poblar sus tablas
  */
 
 -- Creacion de la base de datos y todas sus tablas
