@@ -18,6 +18,4 @@ CREATE DATABASE saludtfe;
 \i creacion.sql
 \i triggers.sql
 
--- \i insercion.sql
-
--- \i operaciones.sql
+\i insercion.sql

@@ -10,7 +10,8 @@ CREATE TYPE USO AS ENUM (
   'Almacen', 
   'Consulta', 
   'Recepcion', 
-  'Diagnostico', 
+  'Diagnostico',
+  'Hospitalizacion',
   'Garaje');
 CREATE TYPE ESPECIALIDAD AS ENUM(
   'Traumatologia',
@@ -32,9 +33,9 @@ CREATE TYPE ESPECIALIDAD AS ENUM(
 );
 
 -- TABLAS
-
 CREATE TABLE paciente_sc (
   historia_clinica INTEGER PRIMARY KEY DEFAULT nextval('n_historia_clinica'),
+  nombre VARCHAR(250) NOT NULL,
   dni CHAR (9) NOT NULL UNIQUE CHECK (dni ~ '^[0-9]{8}[A-Za-z]$'),
   telefono CHAR (9) NOT NULL CHECK (telefono ~ '^[0-9]+$'),
   email VARCHAR (320),
@@ -44,6 +45,7 @@ CREATE TABLE paciente_sc (
 
 CREATE TABLE paciente_sp (
   historia_clinica INTEGER PRIMARY KEY DEFAULT nextval('n_historia_clinica'),
+  nombre VARCHAR(250) NOT NULL,
   dni CHAR (9) NOT NULL UNIQUE CHECK (dni ~ '^[0-9]{8}[A-Za-z]$'),
   telefono CHAR (9) NOT NULL CHECK (telefono ~ '^[0-9]+$'),
   email VARCHAR (320),
@@ -66,7 +68,7 @@ CREATE TABLE personal (
 
 CREATE TABLE hospital (
   id_hospital SERIAL PRIMARY KEY,
-  nombre_hospital CHAR (9) NOT NULL,
+  nombre_hospital VARCHAR (100) NOT NULL,
   telefono CHAR (9) NOT NULL CHECK (telefono ~ '^[0-9]+$'),
   ubicacion POINT NOT NULL
 );
@@ -106,14 +108,16 @@ CREATE TABLE farmaceutica (
 
 CREATE TABLE consultas_sc (
   historia_clinica SERIAL REFERENCES paciente_sc(historia_clinica),
-  total_pago FLOAT NOT NULL,
+  colegiado SERIAL REFERENCES personal(colegiado),
+  total_pago FLOAT,
   fecha DATE NOT NULL,
   diagnostico TEXT NOT NULL
 );
 
 CREATE TABLE consultas_sp (
   historia_clinica SERIAL REFERENCES paciente_sp(historia_clinica),
-  total_pago FLOAT NOT NULL,
+  colegiado SERIAL REFERENCES personal(colegiado),
+  total_pago FLOAT,
   fecha DATE NOT NULL,
   diagnostico TEXT NOT NULL
 );
