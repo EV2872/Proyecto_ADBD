@@ -1,6 +1,5 @@
-import os
 import psycopg2
-from flask import Flask, request, url_for, jsonify, Response
+from flask import Flask, request, jsonify, Response
 from psycopg2 import OperationalError
 import sys
 
@@ -75,7 +74,7 @@ def get_stock_hospital(id_hospital):
     }
 
     for element in stock:
-      resultado["hospital"]["stock"].append({
+      resultado["almacen_hospital"]["stock"].append({
         "nombre_material": element[2],
         "cantidad_stock": element[3]
       })
@@ -236,13 +235,14 @@ def get_contratos(colegiado):
       campo_a_actualizar = datos["campo_a_actualizar"]
       nuevo_valor = datos["nuevo_valor"]
       id_hospital = datos["id_hospital"]
-
+      fecha_inicio = datos["fecha_inicio"]
+      
       columnas_validas = ["fecha_fin", "horas_semanales", "sueldo"]
       if campo_a_actualizar not in columnas_validas:
         return Response("{'msg': 'Columna no válida para actualizar'}", status=400, mimetype='application/json')
 
-      cur.execute(f"UPDATE contrato SET {campo_a_actualizar} = %s WHERE colegiado = %s AND id_hospital = %s AND fecha_fin = NULL", 
-                  (nuevo_valor, colegiado, id_hospital, ))
+      cur.execute(f"UPDATE contrato SET {campo_a_actualizar} = %s WHERE colegiado = %s AND id_hospital = %s AND fecha_inicio = %s", 
+                  (nuevo_valor, colegiado, id_hospital, fecha_inicio, ))
       filas_afectadas = cur.rowcount
       conn.commit()
 
@@ -311,7 +311,7 @@ def get_trabajador_hospital(id_hospital):
       })
     return jsonify(resultado), 200
   else:
-    return Response("{'msg': 'No se encuentra el trabajador especificado'}", status=404, mimetype='application/json')
+    return Response("{'msg': 'No se encuentra el hospital especificado'}", status=404, mimetype='application/json')
 
 @app.route('/trabajadores/nuevo', methods=['POST'])
 def actualizar_trabajador():
@@ -355,7 +355,7 @@ def get_info_consultas(colegiado, historia_clinica):
 def get_todas_consultas(historia_clinica):
   conn = get_db_connection()
   cur = conn.cursor()
-  cur.execute('SELECT fecha, diagnostico FROM vista_consultas WHERE historia_clinica = %s', (historia_clinica, ))
+  cur.execute('SELECT fecha, diagnostico, total_pago FROM vista_consultas WHERE historia_clinica = %s', (historia_clinica, ))
   consultas = cur.fetchall()
   if consultas:
     resultado = {
@@ -364,7 +364,8 @@ def get_todas_consultas(historia_clinica):
     for consulta in consultas:
       resultado["consultas"].append({
         "fecha": consulta[0],
-        "diagnostico": consulta[1]
+        "diagnostico": consulta[1],
+        "total_pago": consulta[2]
       })
     return jsonify(resultado), 200
   else:
@@ -506,7 +507,6 @@ def alta_paciente():
       datos = request.json
 
       if datos["tipo_paciente"] == "ss":
-        print("AQUI")
         cur.execute('INSERT INTO paciente_ss(nombre, dni, telefono, email, fecha_nacimiento, codigo_ss) VALUES (%s, %s, %s, %s, %s, %s)',
                     (datos["nombre"], datos["dni"], datos["telefono"], datos["email"], datos["fecha_nacimiento"], datos["codigo_ss"], ))    
       elif datos["tipo_paciente"] == "sp":
@@ -523,18 +523,45 @@ def alta_paciente():
   else:
     return Response("{'msg': 'Verbo no valido'}", status=401, mimetype='application/json')
 
-@app.route('/paciente/baja/<int:historia_clinica>', methods=['DELETE'])
-def baja_paciente(historia_clinica):
+@app.route('/paciente/todos/<string:tipo>')
+def get_todos_pacientes(tipo):
+  conn = get_db_connection()
+  cur = conn.cursor()
+  if tipo == "ss":
+    cur.execute('SELECT historia_clinica, nombre, fecha_nacimiento, telefono, email FROM paciente_ss')
+  elif tipo == "sp":
+    cur.execute('SELECT historia_clinica, nombre, fecha_nacimiento, telefono, email FROM paciente_sp')
+  else:
+    return Response("{'msg': 'Error, debes indicar si es un paciente de la seguridad social (ss) o de seguro privado (sp)'}", 
+                    status=400, mimetype='application/json')
+  
+  pacientes = cur.fetchall()
+  if pacientes:
+    resultado = {
+      "pacientes": []
+    }
+    for paciente in pacientes:
+      resultado["pacientes"].append({
+        "historia_clinica": paciente[0],
+        "nombre": paciente[1],
+        "fecha_nacimiento": paciente[2],
+        "telefono": paciente[3],
+        "email": paciente[4],
+      })
+    return jsonify(resultado), 200
+  else:
+    return Response("{'msg': 'No hay pacientes en el sistema con ese tipo de seguro'}", status=404, mimetype='application/json')
+
+@app.route('/paciente/baja/<int:historia_clinica>/tipo/<string:tipo>', methods=['DELETE'])
+def baja_paciente(historia_clinica, tipo):
   if request.method == 'DELETE':
     try:
       conn = get_db_connection()
       cur = conn.cursor()
 
-      datos = request.json
-
-      if datos["tipo_paciente"] == "ss":
+      if tipo == "ss":
         cur.execute('DELETE FROM paciente_ss WHERE historia_clinica = %s', (historia_clinica, ))
-      elif datos["tipo_paciente"] == "sp":
+      elif tipo == "sp":
         cur.execute('DELETE FROM paciente_sp WHERE historia_clinica = %s', (historia_clinica, ))
       else:
         return Response("{'msg': 'Error, debes indicar si es un paciente de la seguridad social (ss) o de seguro privado (sp)'}", 
@@ -563,7 +590,6 @@ def gestion_citas():
       datos = request.json
 
       if datos["tipo_paciente"] == "ss":
-        print("AQUI 1")
         cur.execute('INSERT INTO cita_ss (historia_clinica, colegiado, id_hospital, fecha) VALUES(%s, %s, %s, %s)', 
                     (datos["historia_clinica"], datos["colegiado"], datos["id_hospital"], datos["fecha"], ))
       elif datos["tipo_paciente"] == "sp":

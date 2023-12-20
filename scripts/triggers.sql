@@ -14,7 +14,7 @@ BEGIN
         RAISE EXCEPTION 'El trabajador no puede trabajar en más de dos sitios a la vez.';
     END IF;
 
-    -- Comprobar que el total de horas semanales no supere las 40
+    -- Comprobar que el total de horas semanales no supera las 40
     SELECT COALESCE(SUM(horas_semanales), 0)
     INTO total_horas_semanales
     FROM contrato
@@ -82,55 +82,17 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
-
--- CREATE OR REPLACE FUNCTION check_uso_material_planta()
--- RETURNS TRIGGER AS $$
--- DECLARE
---     material_existente INTEGER;
---     id_hospital_planta INTEGER;
--- BEGIN
---     -- Obtener el id_hospital de la planta
---     SELECT id_hospital
---     INTO id_hospital_planta
---     FROM planta
---     WHERE id_planta = NEW.id_planta;
-
---     -- Comprobar si el material existe en el hospital de la planta
---     SELECT COUNT(*)
---     INTO material_existente
---     FROM material_hospital
---     WHERE id_hospital = id_hospital_planta AND id_material = NEW.id_material;
-
---     IF material_existente = 0 THEN
---         RAISE EXCEPTION 'El material no está disponible en la planta.';
---     END IF;
-
---     -- Restar la cantidad_suministrada a la cantidad en material_hospital
---     UPDATE material_hospital
---     SET cantidad = cantidad - NEW.cantidad_suministrada
---     WHERE id_hospital = id_hospital_planta AND id_material = NEW.id_material;
-
---     IF NOT FOUND THEN
---         RAISE EXCEPTION 'No se pudo restar la cantidad suministrada al material ya que no se ha encontrado.';
---     END IF;
-
---     RETURN NEW;
--- END;
--- $$ LANGUAGE plpgsql;
-
 CREATE TRIGGER trigger_stock
 BEFORE INSERT ON uso_material_planta
 FOR EACH ROW
 EXECUTE FUNCTION check_uso_material_planta();
-
-----------------------------------------------------------------------------------------------
 
 -- Trigger para consulta_ss
 CREATE OR REPLACE FUNCTION calcular_total_pago_ss()
 RETURNS TRIGGER AS $$
 DECLARE
     n_medico_colegiado INTEGER;
-    descuento FLOAT; 
+    descuento FLOAT;
     fecha_ultima_cita DATE;
 BEGIN
     -- Obtener el colegiado del médico para la consulta_ss
