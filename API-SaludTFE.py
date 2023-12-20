@@ -110,12 +110,12 @@ def add_material(id_material, id_hospital, cantidad):
       conn = get_db_connection()
       cur = conn.cursor()
       cur.execute('INSERT INTO material_hospital (id_hospital, id_material, cantidad) VALUES (%s, %s, %s)', 
-                        (id_hospital, id_material, cantidad))
+                  (id_hospital, id_material, cantidad))
       conn.commit()
 
       return Response("{'msg': 'Registro añadido correctamente'}", status=201, mimetype='application/json')
-    except:
-      return Response("{'msg': 'Error al insertar datos en la base de datos'}", status=400, mimetype='application/json')
+    except psycopg2.DatabaseError as err:
+      return Response(f"{{'msg': 'Error al insertar datos en la base de datos: {err}'}}", status=400, mimetype='application/json')
   else:
     return Response("{'msg': 'Verbo no valido'}", status=401, mimetype='application/json')
 
@@ -133,8 +133,8 @@ def usar_material():
       conn.commit()
 
       return Response("{'msg': 'Registro añadido correctamente'}", status=201, mimetype='application/json')
-    except:
-      return Response("{'msg': 'Error al insertar datos en la base de datos'}", status=400, mimetype='application/json')
+    except psycopg2.DatabaseError as err:
+      return Response(f"{{'msg': 'Error al insertar datos en la base de datos: {err}'}}", status=400, mimetype='application/json')
   else:
     return Response("{'msg': 'Verbo no valido'}", status=401, mimetype='application/json')
 
@@ -153,8 +153,8 @@ def actualizar_material():
       if filas_afectadas != 0:
         return Response("{'msg': 'Registro actualizado correctamente'}", status=200, mimetype='application/json')
       return Response("{'msg': 'Algo a ido mal en la actualización, el colegiado no se a encontrado'}", status=400, mimetype='application/json') 
-    except:
-      return Response("{'msg': 'Error al actualizar los datos'}", status=400, mimetype='application/json')
+    except psycopg2.DatabaseError as err:
+      return Response(f"{{'msg': 'Error al actualizar los datos {err}'}}", status=400, mimetype='application/json')
   else:
     return Response("{'msg': 'Verbo no valido'}", status=401, mimetype='application/json')
 
@@ -219,8 +219,8 @@ def get_delete_trabajador(colegiado):
       if filas_afectadas != 0:
         return Response("{'msg': 'Trabajador borrado correctamente'}", status=410, mimetype='application/json')
       return Response("{'msg': 'El trabajador no se pudo borrar porque no existe previamente'}", status=404, mimetype='application/json')
-    except:
-      return Response("{'msg': 'Trabajador no encontrado'}", status=404, mimetype='application/json')
+    except psycopg2.DatabaseError as err:
+      return Response(f"{{'msg': 'Trabajador no encontrado {err}'}}", status=404, mimetype='application/json')
   else:
     return Response("{'msg': 'Verbo no valido'}", status=401, mimetype='application/json')
 
@@ -249,8 +249,8 @@ def get_contratos(colegiado):
       if filas_afectadas != 0:
         return Response("{'msg': 'Registro actualizado correctamente'}", status=200, mimetype='application/json')
       return Response("{'msg': 'Algo a ido mal en la actualización, el colegiado no se a encontrado'}", status=404, mimetype='application/json')      
-    except:
-      return Response("{'msg': 'Error al actualizar el registro'}", status=400, mimetype='application/json')
+    except psycopg2.DatabaseError as err:
+      return Response(f"{{'msg': 'Error al actualizar el registro {err}'}}", status=400, mimetype='application/json')
   elif request.method == 'GET':
     conn = get_db_connection()
     cur = conn.cursor()
@@ -282,8 +282,8 @@ def get_contratos(colegiado):
                   (colegiado, datos["id_hospital"], datos["fecha_inicio"], datos["fecha_fin"], datos["horas_semanales"], datos["sueldo"]))
       conn.commit()
       return Response("{'msg': 'Registro añadido correctamente'}", status=201, mimetype='application/json')
-    except:
-      return Response("{'msg': 'Error al insertar datos en la base de datos'}", status=400, mimetype='application/json')
+    except psycopg2.DatabaseError as err:
+      return Response(f"{{'msg': 'Error al insertar datos en la base de datos {err}'}}", status=400, mimetype='application/json')
   else:
     return Response("{'msg': 'Verbo no valido'}", status=401, mimetype='application/json')
 
@@ -325,8 +325,8 @@ def actualizar_trabajador():
       conn.commit()
       
       return Response("{'msg': 'Registro añadido correctamente'}", status=201, mimetype='application/json')
-    except:
-      return Response("{'msg': 'Error al insertar datos en la base de datos'}", status=400, mimetype='application/json')
+    except psycopg2.DatabaseError as err:
+      return Response(f"{{'msg': 'Error al insertar datos en la base de datos {err}'}}", status=400, mimetype='application/json')
   else:
     return Response("{'msg': 'Verbo no valido'}", status=401, mimetype='application/json')
 
@@ -391,8 +391,8 @@ def add_consultas():
 
       conn.commit()
       return Response("{'msg': 'Consulta añadida'}", status=200, mimetype='application/json')
-    except:
-      return Response("{'msg': 'Error al insertar la consulta'}", status=400, mimetype='application/json')
+    except psycopg2.DatabaseError as err:
+      return Response(f"{{'msg': 'Error al insertar la consulta {err}'}}", status=400, mimetype='application/json')
   else:
     return Response("{'msg': 'Verbo no valido'}", status=401, mimetype='application/json')
 
@@ -428,8 +428,8 @@ def update_consultas(colegiado, historia_clinica, fecha):
         return Response("{'msg': 'Registro actualizado correctamente'}", status=200, mimetype='application/json')
       
       return Response("{'msg': 'Algo a ido mal en la actualización, revisa los parametros de la consulta'}", status=400, mimetype='application/json')      
-    except:
-      return Response("{'msg': 'Error al actualizar el registro'}", status=400, mimetype='application/json')
+    except psycopg2.DatabaseError as err:
+      return Response(f"{{'msg': 'Error al actualizar el registro {err}'}}", status=400, mimetype='application/json')
   else:
     return Response("{'msg': 'Verbo no valido'}", status=401, mimetype='application/json')
 
@@ -518,8 +518,8 @@ def alta_paciente():
 
       conn.commit()
       return Response("{'msg': 'Paciente añadido'}", status=200, mimetype='application/json')
-    except:
-      return Response("{'msg': 'Error al insertar el paciente'}", status=400, mimetype='application/json')
+    except psycopg2.DatabaseError as err:
+      return Response(f"{{'msg': 'Error al insertar el paciente {err}'}}", status=400, mimetype='application/json')
   else:
     return Response("{'msg': 'Verbo no valido'}", status=401, mimetype='application/json')
 
@@ -548,8 +548,8 @@ def baja_paciente(historia_clinica):
       
       return Response("{'msg': 'El paciente no se pudo dar de baja porque no existe previamente'}", 
                         status=404, mimetype='application/json')
-    except:
-      return Response("{'msg': 'Error al eliminar el paciente del sistema'}", status=400, mimetype='application/json')
+    except psycopg2.DatabaseError as err:
+      return Response(f"{{'msg': 'Error al eliminar el paciente del sistema {err}'}}", status=400, mimetype='application/json')
   else:
     return Response("{'msg': 'Verbo no valido'}", status=401, mimetype='application/json')
 
@@ -576,8 +576,8 @@ def gestion_citas():
 
       conn.commit()
       return Response("{'msg': 'Nueva cita añadida para el paciente indicado'}", status=200, mimetype='application/json')
-    except:
-      return Response("{'msg': 'Error al añadir la cita, revisa el body de tu petición'}", status=400, mimetype='application/json')
+    except psycopg2.DatabaseError as err:
+      return Response(f"{{'msg': 'Error al añadir la cita, revisa el body de tu petición: {err}'}}", status=400, mimetype='application/json')
   elif request.method == 'DELETE':
     try:
       conn = get_db_connection()
@@ -603,8 +603,8 @@ def gestion_citas():
       
       return Response("{'msg': 'No se pudo borrar la cita porque no existe previamente'}", 
                         status=404, mimetype='application/json')
-    except:
-      return Response("{'msg': 'Error al eliminar la cita del paciente, revisa el body de tu petición'}", 
+    except psycopg2.DatabaseError as err:
+      return Response(f"{{'msg': 'Error al eliminar la cita del paciente, revisa el body de tu petición: {err}'}}", 
                       status=400, mimetype='application/json')
   elif request.method == 'PATCH':
     try:
@@ -638,9 +638,11 @@ def gestion_citas():
 
       if filas_afectadas != 0:
         return Response("{'msg': 'Registro actualizado correctamente'}", status=200, mimetype='application/json')
-      return Response("{'msg': 'Algo a ido mal en la actualización, revisa los parametros de la consulta'}", status=400, mimetype='application/json') 
-    except:
-      return Response("{'msg': 'Error al actualizar la cita del paciente, revisa el body de tu petición'}", status=400, mimetype='application/json')
+      return Response("{'msg': 'Algo a ido mal en la actualización, revisa los parametros de la consulta'}",
+                       status=400, mimetype='application/json') 
+    except psycopg2.DatabaseError as err:
+      return Response(f"{{'msg': 'Error al actualizar la cita del paciente, revisa el body de tu petición: {err}'}}",
+                       status=400, mimetype='application/json')
   else:
     return Response("{'msg': 'Verbo no valido'}", status=401, mimetype='application/json')
 
