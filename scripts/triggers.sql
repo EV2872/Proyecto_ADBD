@@ -40,6 +40,7 @@ RETURNS TRIGGER AS $$
 DECLARE
     material_existente INTEGER;
     id_hospital_planta INTEGER;
+    cantidad_disponible INTEGER;
 BEGIN
     -- Obtener el id_hospital de la planta
     SELECT id_hospital
@@ -57,6 +58,17 @@ BEGIN
         RAISE EXCEPTION 'El material no está disponible en la planta.';
     END IF;
 
+    -- Obtener la cantidad disponible del material en el hospital
+    SELECT cantidad
+    INTO cantidad_disponible
+    FROM material_hospital
+    WHERE id_hospital = id_hospital_planta AND id_material = NEW.id_material;
+
+    -- Verificar si la cantidad_suministrada es mayor que la cantidad disponible
+    IF NEW.cantidad_suministrada > cantidad_disponible THEN
+        RAISE EXCEPTION 'La cantidad suministrada es mayor que la cantidad disponible del material en el hospital.';
+    END IF;
+
     -- Restar la cantidad_suministrada a la cantidad en material_hospital
     UPDATE material_hospital
     SET cantidad = cantidad - NEW.cantidad_suministrada
@@ -69,6 +81,42 @@ BEGIN
     RETURN NEW;
 END;
 $$ LANGUAGE plpgsql;
+
+
+-- CREATE OR REPLACE FUNCTION check_uso_material_planta()
+-- RETURNS TRIGGER AS $$
+-- DECLARE
+--     material_existente INTEGER;
+--     id_hospital_planta INTEGER;
+-- BEGIN
+--     -- Obtener el id_hospital de la planta
+--     SELECT id_hospital
+--     INTO id_hospital_planta
+--     FROM planta
+--     WHERE id_planta = NEW.id_planta;
+
+--     -- Comprobar si el material existe en el hospital de la planta
+--     SELECT COUNT(*)
+--     INTO material_existente
+--     FROM material_hospital
+--     WHERE id_hospital = id_hospital_planta AND id_material = NEW.id_material;
+
+--     IF material_existente = 0 THEN
+--         RAISE EXCEPTION 'El material no está disponible en la planta.';
+--     END IF;
+
+--     -- Restar la cantidad_suministrada a la cantidad en material_hospital
+--     UPDATE material_hospital
+--     SET cantidad = cantidad - NEW.cantidad_suministrada
+--     WHERE id_hospital = id_hospital_planta AND id_material = NEW.id_material;
+
+--     IF NOT FOUND THEN
+--         RAISE EXCEPTION 'No se pudo restar la cantidad suministrada al material ya que no se ha encontrado.';
+--     END IF;
+
+--     RETURN NEW;
+-- END;
+-- $$ LANGUAGE plpgsql;
 
 CREATE TRIGGER trigger_stock
 BEFORE INSERT ON uso_material_planta

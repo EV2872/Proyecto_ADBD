@@ -14,8 +14,7 @@ DROP DATABASE IF EXISTS saludtfe;
 CREATE DATABASE saludtfe;
 -- Nos cambiamos de base de datos a la recien creada
 \c saludtfe; 
-
-\i creacion.sql
+\i tables.sql
 \i triggers.sql
-
-\i insercion.sql
+\i data.sql
+\i views.sql

@@ -109,14 +109,15 @@ def add_material(id_material, id_hospital, cantidad):
     try:
       conn = get_db_connection()
       cur = conn.cursor()
-      log = cur.execute('INSERT INTO material_hospital (id_hospital, id_material, cantidad) VALUES (%s, %s, %s)', (id_hospital, id_material, cantidad))
+      cur.execute('INSERT INTO material_hospital (id_hospital, id_material, cantidad) VALUES (%s, %s, %s)', 
+                        (id_hospital, id_material, cantidad))
       conn.commit()
 
-      return Response("{'msg': 'Registro añadido correctamente'}", status=200, mimetype='application/json')
+      return Response("{'msg': 'Registro añadido correctamente'}", status=201, mimetype='application/json')
     except:
-      return Response("{'msg': 'Error al insertar datos en la base de datos'}", status=404, mimetype='application/json')
+      return Response("{'msg': 'Error al insertar datos en la base de datos'}", status=400, mimetype='application/json')
   else:
-    return Response("{'msg': 'Verbo no valido'}", status=404, mimetype='application/json')
+    return Response("{'msg': 'Verbo no valido'}", status=401, mimetype='application/json')
 
 @app.route('/administra/uso', methods=['POST'])
 def usar_material():
@@ -127,14 +128,15 @@ def usar_material():
 
       datos = request.json
 
-      cur.execute('INSERT INTO uso_material_planta (id_planta, id_material, cantidad_suministrada) VALUES (%s, %s, %s)', (datos["id_planta"], datos["id_material"], datos["cantidad_suministrada"], ))
-      log = conn.commit()
+      cur.execute('INSERT INTO uso_material_planta (id_planta, id_material, cantidad_suministrada) VALUES (%s, %s, %s)', 
+                  (datos["id_planta"], datos["id_material"], datos["cantidad_suministrada"], ))
+      conn.commit()
 
-      return Response("{'msg': 'Registro añadido correctamente'}", status=200, mimetype='application/json')
+      return Response("{'msg': 'Registro añadido correctamente'}", status=201, mimetype='application/json')
     except:
-      return Response("{'msg': 'Error al insertar datos en la base de datos'}", status=404, mimetype='application/json')
+      return Response("{'msg': 'Error al insertar datos en la base de datos'}", status=400, mimetype='application/json')
   else:
-    return Response("{'msg': 'Verbo no valido'}", status=404, mimetype='application/json')
+    return Response("{'msg': 'Verbo no valido'}", status=401, mimetype='application/json')
 
 @app.route('/administra/actualizar', methods=['PATCH'])
 def actualizar_material():
@@ -143,14 +145,18 @@ def actualizar_material():
       conn = get_db_connection()
       cur = conn.cursor()
       datos = request.json
-      cur.execute('UPDATE material_hospital SET cantidad = %s WHERE id_hospital = %s AND id_material = %s ', (datos["cantidad"], datos["id_hospital"], datos["id_material"], ))
-      log = conn.commit()
+      cur.execute('UPDATE material_hospital SET cantidad = %s WHERE id_hospital = %s AND id_material = %s ', 
+                  (datos["cantidad"], datos["id_hospital"], datos["id_material"], ))
+      filas_afectadas = cur.rowcount
+      conn.commit()
 
-      return Response("{'msg': 'Registro actualizado correctamente'}", status=200, mimetype='application/json')
+      if filas_afectadas != 0:
+        return Response("{'msg': 'Registro actualizado correctamente'}", status=200, mimetype='application/json')
+      return Response("{'msg': 'Algo a ido mal en la actualización, el colegiado no se a encontrado'}", status=400, mimetype='application/json') 
     except:
-      return Response("{'msg': 'Error al actualizar los datos'}", status=404, mimetype='application/json')
+      return Response("{'msg': 'Error al actualizar los datos'}", status=400, mimetype='application/json')
   else:
-    return Response("{'msg': 'Verbo no valido'}", status=404, mimetype='application/json')
+    return Response("{'msg': 'Verbo no valido'}", status=401, mimetype='application/json')
 
 @app.route('/trabajadores')
 def get_trabajadores():
@@ -177,7 +183,7 @@ def get_trabajadores():
   else:
     return Response("{'msg': 'No hay trabajadores registrados'}", status=404, mimetype='application/json')
 
-@app.route('/trabajadores/<int:colegiado>', methods=['GET', 'DELETE', 'PATCH'])
+@app.route('/trabajadores/<int:colegiado>', methods=['GET', 'DELETE'])
 def get_delete_trabajador(colegiado):
   if request.method == 'GET':
     conn = get_db_connection()
@@ -206,34 +212,80 @@ def get_delete_trabajador(colegiado):
       cur = conn.cursor()
       cur.execute('DELETE FROM personal WHERE colegiado = %s', (colegiado, ))
       conn.commit()
-      return Response("{'msg': 'Trabajador borrado'}", status=200, mimetype='application/json')
+
+      filas_afectadas = cur.rowcount
+      conn.commit()
+
+      if filas_afectadas != 0:
+        return Response("{'msg': 'Trabajador borrado correctamente'}", status=410, mimetype='application/json')
+      return Response("{'msg': 'El trabajador no se pudo borrar porque no existe previamente'}", status=404, mimetype='application/json')
     except:
       return Response("{'msg': 'Trabajador no encontrado'}", status=404, mimetype='application/json')
-  elif request.method == 'PATCH':
+  else:
+    return Response("{'msg': 'Verbo no valido'}", status=401, mimetype='application/json')
+
+@app.route('/trabajadores/<int:colegiado>/contratos', methods=['GET', 'POST', 'PATCH'])
+def get_contratos(colegiado):
+  if request.method == 'PATCH':
     try:
       conn = get_db_connection()
       cur = conn.cursor()
       
       datos = request.json
+
       campo_a_actualizar = datos["campo_a_actualizar"]
       nuevo_valor = datos["nuevo_valor"]
-      columnas_validas = ["especialidad", "m_cuota", "m_descuento", "e_consulta_propia"]
+      id_hospital = datos["id_hospital"]
+
+      columnas_validas = ["fecha_fin", "horas_semanales", "sueldo"]
       if campo_a_actualizar not in columnas_validas:
         return Response("{'msg': 'Columna no válida para actualizar'}", status=400, mimetype='application/json')
 
-      cur.execute(f"UPDATE personal SET {campo_a_actualizar} = %s WHERE colegiado = %s", (nuevo_valor, colegiado, ))
+      cur.execute(f"UPDATE contrato SET {campo_a_actualizar} = %s WHERE colegiado = %s AND id_hospital = %s AND fecha_fin = NULL", 
+                  (nuevo_valor, colegiado, id_hospital, ))
       filas_afectadas = cur.rowcount
       conn.commit()
 
       if filas_afectadas != 0:
         return Response("{'msg': 'Registro actualizado correctamente'}", status=200, mimetype='application/json')
-      
       return Response("{'msg': 'Algo a ido mal en la actualización, el colegiado no se a encontrado'}", status=404, mimetype='application/json')      
     except:
-      return Response("{'msg': 'Error al actualizar el registro'}", status=404, mimetype='application/json')
-  else:
-    return Response("{'msg': 'Verbo no valido'}", status=404, mimetype='application/json')
+      return Response("{'msg': 'Error al actualizar el registro'}", status=400, mimetype='application/json')
+  elif request.method == 'GET':
+    conn = get_db_connection()
+    cur = conn.cursor()
+    cur.execute("SELECT * FROM contrato WHERE colegiado = %s", (colegiado, ))
+    contratos = cur.fetchall()
 
+    if contratos:
+      resultado = {
+        "contratos": []
+      }
+      for persona in contratos:
+        resultado["contratos"].append({
+          "colegiado": persona[0],
+          "id_hospital": persona[1],
+          "fecha_inicio": persona[2],
+          "fecha_fin": persona[3],
+          "horas_semanales": persona[4],
+          "sueldo": persona[5]
+        })
+      return jsonify(resultado), 200
+    else:
+      return Response("{'msg': 'No se encuentran contratos del trabajador especificado'}", status=404, mimetype='application/json')
+  elif request.method == 'POST':
+    try:
+      conn = get_db_connection()
+      cur = conn.cursor()
+      datos = request.json
+      cur.execute('INSERT INTO contrato (colegiado, id_hospital, fecha_inicio, fecha_fin, horas_semanales, sueldo) VALUES (%s, %s, %s, %s, %s, %s)',
+                  (colegiado, datos["id_hospital"], datos["fecha_inicio"], datos["fecha_fin"], datos["horas_semanales"], datos["sueldo"]))
+      conn.commit()
+      return Response("{'msg': 'Registro añadido correctamente'}", status=201, mimetype='application/json')
+    except:
+      return Response("{'msg': 'Error al insertar datos en la base de datos'}", status=400, mimetype='application/json')
+  else:
+    return Response("{'msg': 'Verbo no valido'}", status=401, mimetype='application/json')
 
 @app.route('/trabajadores/hospital/<int:id_hospital>')
 def get_trabajador_hospital(id_hospital):
@@ -261,30 +313,6 @@ def get_trabajador_hospital(id_hospital):
   else:
     return Response("{'msg': 'No se encuentra el trabajador especificado'}", status=404, mimetype='application/json')
 
-@app.route('/trabajadores/<int:colegiado>/contratos')
-def get_contratos(colegiado):
-  conn = get_db_connection()
-  cur = conn.cursor()
-  cur.execute("SELECT * FROM contrato WHERE colegiado = %s", (colegiado, ))
-  contratos = cur.fetchall()
-
-  if contratos:
-    resultado = {
-      "contratos": []
-    }
-    for persona in contratos:
-      resultado["contratos"].append({
-        "colegiado": persona[0],
-        "id_hospital": persona[1],
-        "fecha_inicio": persona[2],
-        "fecha_fin": persona[3],
-        "horas_semanales": persona[4],
-        "sueldo": persona[5]
-      })
-    return jsonify(resultado), 200
-  else:
-    return Response("{'msg': 'No se encuentran contratos del trabajador especificado'}", status=404, mimetype='application/json')
-
 @app.route('/trabajadores/nuevo', methods=['POST'])
 def actualizar_trabajador():
   if request.method == 'POST':
@@ -292,20 +320,22 @@ def actualizar_trabajador():
       conn = get_db_connection()
       cur = conn.cursor()
       datos = request.json
-      cur.execute('INSERT INTO personal (nombre, fecha_nacimiento, especialidad, tipo, m_cuota, m_descuento, e_consulta_propia) VALUES (%s, %s, %s, %s, %s, %s, %s)', (datos["nombre"], datos["fecha_nacimiento"], datos["especialidad"], datos["tipo"], datos["m_cuota"], datos["m_descuento"], datos["e_consulta_propia"]))
+      cur.execute('INSERT INTO personal (nombre, fecha_nacimiento, especialidad, tipo, m_cuota, m_descuento, e_consulta_propia) VALUES (%s, %s, %s, %s, %s, %s, %s)',
+                  (datos["nombre"], datos["fecha_nacimiento"], datos["especialidad"], datos["tipo"], datos["m_cuota"], datos["m_descuento"], datos["e_consulta_propia"]))
       conn.commit()
       
-      return Response("{'msg': 'Registro añadido correctamente'}", status=200, mimetype='application/json')
+      return Response("{'msg': 'Registro añadido correctamente'}", status=201, mimetype='application/json')
     except:
-      return Response("{'msg': 'Error al insertar datos en la base de datos'}", status=404, mimetype='application/json')
+      return Response("{'msg': 'Error al insertar datos en la base de datos'}", status=400, mimetype='application/json')
   else:
-    return Response("{'msg': 'Verbo no valido'}", status=404, mimetype='application/json')
+    return Response("{'msg': 'Verbo no valido'}", status=401, mimetype='application/json')
 
 @app.route('/consulta/<int:colegiado>/paciente/<int:historia_clinica>')
 def get_info_consultas(colegiado, historia_clinica):
   conn = get_db_connection()
   cur = conn.cursor()
-  cur.execute('SELECT fecha, diagnostico FROM vista_consultas WHERE colegiado = %s AND historia_clinica = %s', (colegiado, historia_clinica, ))
+  cur.execute('SELECT fecha, diagnostico FROM vista_consultas WHERE colegiado = %s AND historia_clinica = %s', 
+              (colegiado, historia_clinica, ))
   consultas = cur.fetchall()
   if consultas:
     resultado = {
@@ -318,7 +348,8 @@ def get_info_consultas(colegiado, historia_clinica):
       })
     return jsonify(resultado), 200
   else:
-    return Response("{'msg': 'No hay registros con ese colegiado e historia clinica'}", status=404, mimetype='application/json')
+    return Response("{'msg': 'No hay registros con ese colegiado e historia clinica'}", 
+                    status=404, mimetype='application/json')
 
 @app.route('/consulta/paciente/<int:historia_clinica>')
 def get_todas_consultas(historia_clinica):
@@ -349,18 +380,21 @@ def add_consultas():
       datos = request.json
 
       if datos["tipo_paciente"] == "ss":
-        cur.execute('INSERT INTO consultas_ss (historia_clinica, colegiado, fecha, diagnostico) VALUES (%s, %s, %s, %s)', (datos["historia_clinica"], datos["colegiado"], datos["fecha"], datos["diagnostico"], ))    
+        cur.execute('INSERT INTO consultas_ss (historia_clinica, colegiado, fecha, diagnostico) VALUES (%s, %s, %s, %s)', 
+                    (datos["historia_clinica"], datos["colegiado"], datos["fecha"], datos["diagnostico"], ))    
       elif datos["tipo_paciente"] == "sp":
-        cur.execute('INSERT INTO consultas_sp (historia_clinica, colegiado, fecha, diagnostico) VALUES (%s, %s, %s, %s)', (datos["historia_clinica"], datos["colegiado"], datos["fecha"], datos["diagnostico"], ))
+        cur.execute('INSERT INTO consultas_sp (historia_clinica, colegiado, fecha, diagnostico) VALUES (%s, %s, %s, %s)', 
+                    (datos["historia_clinica"], datos["colegiado"], datos["fecha"], datos["diagnostico"], ))
       else:
-        return Response("{'msg': 'Error, debes indicar si es un paciente de la seguridad social (ss) o de seguro privado (sp)'}", status=200, mimetype='application/json')
+        return Response("{'msg': 'Error, debes indicar si es un paciente de la seguridad social (ss) o de seguro privado (sp)'}", 
+                        status=400, mimetype='application/json')
 
       conn.commit()
       return Response("{'msg': 'Consulta añadida'}", status=200, mimetype='application/json')
     except:
-      return Response("{'msg': 'Error al insertar la consulta'}", status=404, mimetype='application/json')
+      return Response("{'msg': 'Error al insertar la consulta'}", status=400, mimetype='application/json')
   else:
-    return Response("{'msg': 'Verbo no valido'}", status=404, mimetype='application/json')
+    return Response("{'msg': 'Verbo no valido'}", status=401, mimetype='application/json')
 
 @app.route('/consulta/<int:colegiado>/paciente/<int:historia_clinica>/fecha/<string:fecha>', methods=['PATCH'])
 def update_consultas(colegiado, historia_clinica, fecha):
@@ -378,11 +412,14 @@ def update_consultas(colegiado, historia_clinica, fecha):
         return Response("{'msg': 'Columna no válida para actualizar'}", status=400, mimetype='application/json')
 
       if datos["tipo_paciente"] == "ss":
-        cur.execute(f"UPDATE consultas_ss SET {campo_a_actualizar} = %s WHERE colegiado = %s AND historia_clinica = %s AND fecha = %s", (nuevo_valor, colegiado, historia_clinica, fecha, ))  
+        cur.execute(f"UPDATE consultas_ss SET {campo_a_actualizar} = %s WHERE colegiado = %s AND historia_clinica = %s AND fecha = %s", 
+                    (nuevo_valor, colegiado, historia_clinica, fecha, ))  
       elif datos["tipo_paciente"] == "sp":
-        cur.execute(f"UPDATE consultas_sp SET {campo_a_actualizar} = %s WHERE colegiado = %s AND historia_clinica = %s AND fecha = %s", (nuevo_valor, colegiado, historia_clinica, fecha, ))
+        cur.execute(f"UPDATE consultas_sp SET {campo_a_actualizar} = %s WHERE colegiado = %s AND historia_clinica = %s AND fecha = %s", 
+                    (nuevo_valor, colegiado, historia_clinica, fecha, ))
       else:
-        return Response("{'msg': 'Error, debes indicar si es un paciente de la seguridad social (ss) o de seguro privado (sp)'}", status=200, mimetype='application/json')
+        return Response("{'msg': 'Error, debes indicar si es un paciente de la seguridad social (ss) o de seguro privado (sp)'}", 
+                        status=200, mimetype='application/json')
         
       filas_afectadas = cur.rowcount
       conn.commit()
@@ -390,11 +427,11 @@ def update_consultas(colegiado, historia_clinica, fecha):
       if filas_afectadas != 0:
         return Response("{'msg': 'Registro actualizado correctamente'}", status=200, mimetype='application/json')
       
-      return Response("{'msg': 'Algo a ido mal en la actualización, revisa los parametros de la consulta'}", status=404, mimetype='application/json')      
+      return Response("{'msg': 'Algo a ido mal en la actualización, revisa los parametros de la consulta'}", status=400, mimetype='application/json')      
     except:
-      return Response("{'msg': 'Error al actualizar el registro'}", status=404, mimetype='application/json')
+      return Response("{'msg': 'Error al actualizar el registro'}", status=400, mimetype='application/json')
   else:
-    return Response("{'msg': 'Verbo no valido'}", status=404, mimetype='application/json')
+    return Response("{'msg': 'Verbo no valido'}", status=401, mimetype='application/json')
 
 @app.route('/paciente')
 def citas_pacientes():
@@ -470,18 +507,21 @@ def alta_paciente():
 
       if datos["tipo_paciente"] == "ss":
         print("AQUI")
-        cur.execute('INSERT INTO paciente_ss(nombre, dni, telefono, email, fecha_nacimiento, codigo_ss) VALUES (%s, %s, %s, %s, %s, %s)', (datos["nombre"], datos["dni"], datos["telefono"], datos["email"], datos["fecha_nacimiento"], datos["codigo_ss"], ))    
+        cur.execute('INSERT INTO paciente_ss(nombre, dni, telefono, email, fecha_nacimiento, codigo_ss) VALUES (%s, %s, %s, %s, %s, %s)',
+                    (datos["nombre"], datos["dni"], datos["telefono"], datos["email"], datos["fecha_nacimiento"], datos["codigo_ss"], ))    
       elif datos["tipo_paciente"] == "sp":
-        cur.execute('INSERT INTO paciente_sp(nombre, dni, telefono, email, fecha_nacimiento, codigo_sp, cobertura, aseguradora) VALUES (%s, %s, %s, %s, %s, %s, %s, %s)', (datos["nombre"], datos["dni"], datos["telefono"], datos["email"], datos["fecha_nacimiento"], datos["codigo_sp"], datos["cobertura"], datos["aseguradora"], ))
+        cur.execute('INSERT INTO paciente_sp(nombre, dni, telefono, email, fecha_nacimiento, codigo_sp, cobertura, aseguradora) VALUES (%s, %s, %s, %s, %s, %s, %s, %s)',
+                    (datos["nombre"], datos["dni"], datos["telefono"], datos["email"], datos["fecha_nacimiento"], datos["codigo_sp"], datos["cobertura"], datos["aseguradora"], ))
       else:
-        return Response("{'msg': 'Error, debes indicar si es un paciente de la seguridad social (ss) o de seguro privado (sp)'}", status=200, mimetype='application/json')
+        return Response("{'msg': 'Error, debes indicar si es un paciente de la seguridad social (ss) o de seguro privado (sp)'}", 
+                        status=400, mimetype='application/json')
 
       conn.commit()
       return Response("{'msg': 'Paciente añadido'}", status=200, mimetype='application/json')
     except:
-      return Response("{'msg': 'Error al insertar el paciente'}", status=404, mimetype='application/json')
+      return Response("{'msg': 'Error al insertar el paciente'}", status=400, mimetype='application/json')
   else:
-    return Response("{'msg': 'Verbo no valido'}", status=404, mimetype='application/json')
+    return Response("{'msg': 'Verbo no valido'}", status=401, mimetype='application/json')
 
 @app.route('/paciente/baja/<int:historia_clinica>', methods=['DELETE'])
 def baja_paciente(historia_clinica):
@@ -497,14 +537,21 @@ def baja_paciente(historia_clinica):
       elif datos["tipo_paciente"] == "sp":
         cur.execute('DELETE FROM paciente_sp WHERE historia_clinica = %s', (historia_clinica, ))
       else:
-        return Response("{'msg': 'Error, debes indicar si es un paciente de la seguridad social (ss) o de seguro privado (sp)'}", status=200, mimetype='application/json')
-
+        return Response("{'msg': 'Error, debes indicar si es un paciente de la seguridad social (ss) o de seguro privado (sp)'}", 
+                        status=400, mimetype='application/json')
+      
+      filas_afectadas = cur.rowcount
       conn.commit()
-      return Response("{'msg': 'Paciente dado de baja del sistema'}", status=200, mimetype='application/json')
+
+      if filas_afectadas != 0:
+        return Response("{'msg': 'Paciente dado de baja correctamente'}", status=410, mimetype='application/json')
+      
+      return Response("{'msg': 'El paciente no se pudo dar de baja porque no existe previamente'}", 
+                        status=404, mimetype='application/json')
     except:
-      return Response("{'msg': 'Error al eliminar el paciente del sistema'}", status=404, mimetype='application/json')
+      return Response("{'msg': 'Error al eliminar el paciente del sistema'}", status=400, mimetype='application/json')
   else:
-    return Response("{'msg': 'Verbo no valido'}", status=404, mimetype='application/json')
+    return Response("{'msg': 'Verbo no valido'}", status=401, mimetype='application/json')
 
 @app.route('/paciente/nueva_cita', methods=['POST', 'DELETE', 'PATCH'])
 def gestion_citas():
@@ -517,17 +564,20 @@ def gestion_citas():
 
       if datos["tipo_paciente"] == "ss":
         print("AQUI 1")
-        cur.execute('INSERT INTO cita_ss (historia_clinica, colegiado, id_hospital, fecha) VALUES(%s, %s, %s, %s)', (datos["historia_clinica"], datos["colegiado"], datos["id_hospital"], datos["fecha"], ))
+        cur.execute('INSERT INTO cita_ss (historia_clinica, colegiado, id_hospital, fecha) VALUES(%s, %s, %s, %s)', 
+                    (datos["historia_clinica"], datos["colegiado"], datos["id_hospital"], datos["fecha"], ))
       elif datos["tipo_paciente"] == "sp":
         print("AQUI 2")
-        cur.execute('INSERT INTO cita_sp (historia_clinica, colegiado, id_hospital, fecha) VALUES(%s, %s, %s, %s)', (datos["historia_clinica"], datos["colegiado"], datos["id_hospital"], datos["fecha"], ))
+        cur.execute('INSERT INTO cita_sp (historia_clinica, colegiado, id_hospital, fecha) VALUES(%s, %s, %s, %s)', 
+                    (datos["historia_clinica"], datos["colegiado"], datos["id_hospital"], datos["fecha"], ))
       else:
-        return Response("{'msg': 'Error, debes indicar si es un paciente de la seguridad social (ss) o de seguro privado (sp)'}", status=200, mimetype='application/json')
+        return Response("{'msg': 'Error, debes indicar si es un paciente de la seguridad social (ss) o de seguro privado (sp)'}", 
+                        status=400, mimetype='application/json')
 
       conn.commit()
       return Response("{'msg': 'Nueva cita añadida para el paciente indicado'}", status=200, mimetype='application/json')
     except:
-      return Response("{'msg': 'Error al añadir la cita, revisa el body de tu petición'}", status=404, mimetype='application/json')
+      return Response("{'msg': 'Error al añadir la cita, revisa el body de tu petición'}", status=400, mimetype='application/json')
   elif request.method == 'DELETE':
     try:
       conn = get_db_connection()
@@ -536,16 +586,26 @@ def gestion_citas():
       datos = request.json
 
       if datos["tipo_paciente"] == "ss":
-        cur.execute('DELETE FROM cita_ss WHERE historia_clinica = %s AND colegiado = %s AND fecha = %s', (datos["historia_clinica"], datos["colegiado"], datos["fecha"], ))
+        cur.execute('DELETE FROM cita_ss WHERE historia_clinica = %s AND colegiado = %s AND fecha = %s', 
+                    (datos["historia_clinica"], datos["colegiado"], datos["fecha"], ))
       elif datos["tipo_paciente"] == "sp":
-        cur.execute('DELETE FROM cita_sp WHERE historia_clinica = %s AND colegiado = %s AND fecha = %s', (datos["historia_clinica"], datos["colegiado"], datos["fecha"], ))
+        cur.execute('DELETE FROM cita_sp WHERE historia_clinica = %s AND colegiado = %s AND fecha = %s', 
+                    (datos["historia_clinica"], datos["colegiado"], datos["fecha"], ))
       else:
-        return Response("{'msg': 'Error, debes indicar si es un paciente de la seguridad social (ss) o de seguro privado (sp)'}", status=200, mimetype='application/json')
+        return Response("{'msg': 'Error, debes indicar si es un paciente de la seguridad social (ss) o de seguro privado (sp)'}", 
+                        status=400, mimetype='application/json')
 
+      filas_afectadas = cur.rowcount
       conn.commit()
-      return Response("{'msg': 'Cita eliminada'}", status=200, mimetype='application/json')
+
+      if filas_afectadas != 0:
+        return Response("{'msg': 'Cita borrada correctamente'}", status=410, mimetype='application/json')
+      
+      return Response("{'msg': 'No se pudo borrar la cita porque no existe previamente'}", 
+                        status=404, mimetype='application/json')
     except:
-      return Response("{'msg': 'Error al eliminar la cita del paciente, revisa el body de tu petición'}", status=404, mimetype='application/json')
+      return Response("{'msg': 'Error al eliminar la cita del paciente, revisa el body de tu petición'}", 
+                      status=400, mimetype='application/json')
   elif request.method == 'PATCH':
     try:
       conn = get_db_connection()
@@ -564,19 +624,23 @@ def gestion_citas():
         return Response("{'msg': 'Columna no válida para actualizar'}", status=400, mimetype='application/json')
 
       if datos["tipo_paciente"] == "ss":
-        cur.execute(f"UPDATE cita_ss SET {campo_a_actualizar} = %s WHERE colegiado = %s AND historia_clinica = %s AND fecha = %s", (nuevo_valor, colegiado, historia_clinica, fecha, ))  
+        cur.execute(f"UPDATE cita_ss SET {campo_a_actualizar} = %s WHERE colegiado = %s AND historia_clinica = %s AND fecha = %s", 
+                    (nuevo_valor, colegiado, historia_clinica, fecha, ))  
       elif datos["tipo_paciente"] == "sp":
-        cur.execute(f"UPDATE cita_sp SET {campo_a_actualizar} = %s WHERE colegiado = %s AND historia_clinica = %s AND fecha = %s", (nuevo_valor, colegiado, historia_clinica, fecha, ))
+        cur.execute(f"UPDATE cita_sp SET {campo_a_actualizar} = %s WHERE colegiado = %s AND historia_clinica = %s AND fecha = %s", 
+                    (nuevo_valor, colegiado, historia_clinica, fecha, ))
       else:
-        return Response("{'msg': 'Error, debes indicar si es un paciente de la seguridad social (ss) o de seguro privado (sp)'}", status=200, mimetype='application/json')
+        return Response("{'msg': 'Error, debes indicar si es un paciente de la seguridad social (ss) o de seguro privado (sp)'}", 
+                        status=400, mimetype='application/json')
         
       filas_afectadas = cur.rowcount
       conn.commit()
 
       if filas_afectadas != 0:
         return Response("{'msg': 'Registro actualizado correctamente'}", status=200, mimetype='application/json')
-      return Response("{'msg': 'Algo a ido mal en la actualización, revisa los parametros de la consulta'}", status=404, mimetype='application/json') 
+      return Response("{'msg': 'Algo a ido mal en la actualización, revisa los parametros de la consulta'}", status=400, mimetype='application/json') 
     except:
-      return Response("{'msg': 'Error al actualizar la cita del paciente, revisa el body de tu petición'}", status=404, mimetype='application/json')
+      return Response("{'msg': 'Error al actualizar la cita del paciente, revisa el body de tu petición'}", status=400, mimetype='application/json')
   else:
-    return Response("{'msg': 'Verbo no valido'}", status=404, mimetype='application/json')
+    return Response("{'msg': 'Verbo no valido'}", status=401, mimetype='application/json')
+

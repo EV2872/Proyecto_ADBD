@@ -1,9 +1,8 @@
 #!/bin/bash
 
-# Definir variables
-CONTAINER_NAME="postgres-test"
+CONTAINER_NAME="postgres-salud-tfe"
 POSTGRES_PASSWORD="password"
-SQL_FILES=("construirBaseDeDatos.sql" "creacion.sql" "insercion.sql" "triggers.sql" "vistas.sql")
+SQL_FILES=("build.sql" "tables.sql" "data.sql" "triggers.sql" "views.sql")
 
 docker pull postgres
 
