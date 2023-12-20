@@ -77,18 +77,18 @@ EXECUTE FUNCTION check_uso_material_planta();
 
 ----------------------------------------------------------------------------------------------
 
--- Trigger para consulta_sc
-CREATE OR REPLACE FUNCTION calcular_total_pago_sc()
+-- Trigger para consulta_ss
+CREATE OR REPLACE FUNCTION calcular_total_pago_ss()
 RETURNS TRIGGER AS $$
 DECLARE
     n_medico_colegiado INTEGER;
     descuento FLOAT; 
     fecha_ultima_cita DATE;
 BEGIN
-    -- Obtener el colegiado del médico para la consulta_sc
+    -- Obtener el colegiado del médico para la consulta_ss
     SELECT colegiado, fecha
     INTO n_medico_colegiado, fecha_ultima_cita
-    FROM cita_sc
+    FROM cita_ss
     WHERE historia_clinica = NEW.historia_clinica AND colegiado = NEW.colegiado
     ORDER BY fecha DESC
     LIMIT 1;
@@ -98,7 +98,7 @@ BEGIN
     FROM personal
     WHERE colegiado = NEW.colegiado;
 
-    -- Verificar si el médico tiene al menos una consulta anterior con el paciente_sc
+    -- Verificar si el médico tiene al menos una consulta anterior con el paciente_ss
     IF n_medico_colegiado IS NOT NULL AND fecha_ultima_cita IS NOT NULL AND fecha_ultima_cita < NEW.fecha THEN
         -- Obtener la cuota del médico
         SELECT m_descuento
@@ -116,10 +116,10 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
-CREATE TRIGGER a_pagar_consulta_sc
-BEFORE INSERT ON consultas_sc
+CREATE TRIGGER a_pagar_consulta_ss
+BEFORE INSERT ON consultas_ss
 FOR EACH ROW
-EXECUTE FUNCTION calcular_total_pago_sc();
+EXECUTE FUNCTION calcular_total_pago_ss();
 
 -- Trigger para consulta_sp
 CREATE OR REPLACE FUNCTION calcular_total_pago_sp()

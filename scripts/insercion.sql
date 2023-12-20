@@ -1,5 +1,5 @@
--- Insertar datos para paciente_sc
-INSERT INTO paciente_sc (nombre, dni, telefono, email, fecha_nacimiento, codigo_sc)
+-- Insertar datos para paciente_ss
+INSERT INTO paciente_ss (nombre, dni, telefono, email, fecha_nacimiento, codigo_ss)
 VALUES
   ('Ana García', '12345678A', '123456789', 'ana.garcia@email.com', '1990-05-15', 101),
   ('Carlos Martínez', '98765432B', '987654321', 'carlos.martinez@email.com', '1985-09-22', 102);
@@ -123,10 +123,10 @@ VALUES
   (1, 1, 3),
   (1, 2, 5),
   (11, 5, 1),
-  (21, 10, 25);
+  (21, 3, 25);
 
--- Citas pasadas y futuras para paciente_sc
-INSERT INTO cita_sc (historia_clinica, colegiado, id_hospital, fecha)
+-- Citas pasadas y futuras para paciente_ss
+INSERT INTO cita_ss (historia_clinica, colegiado, id_hospital, fecha)
 VALUES
   (1, 1, 1, '2022-05-15'), -- Pasada
   (1, 2, 1, '2023-01-10'), -- Futura
@@ -141,8 +141,8 @@ VALUES
   (4, 3, 3, '2022-11-25'), -- Pasada
   (4, 4, 3, '2023-04-20'); -- Futura
 
--- Consultas pasadas para paciente_sc
-INSERT INTO consultas_sc (historia_clinica, colegiado, fecha, diagnostico)
+-- Consultas pasadas para paciente_ss
+INSERT INTO consultas_ss (historia_clinica, colegiado, fecha, diagnostico)
 VALUES
   (1, 1,'2022-05-15', 'Consulta realizada por el Dr. Roberto Sánchez.'),
   (2, 2,'2022-05-15', 'Consulta realizada por la Dra. Laura González.'),

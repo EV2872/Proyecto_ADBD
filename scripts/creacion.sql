@@ -33,14 +33,14 @@ CREATE TYPE ESPECIALIDAD AS ENUM(
 );
 
 -- TABLAS
-CREATE TABLE paciente_sc (
+CREATE TABLE paciente_ss (
   historia_clinica INTEGER PRIMARY KEY DEFAULT nextval('n_historia_clinica'),
   nombre VARCHAR(250) NOT NULL,
   dni CHAR (9) NOT NULL UNIQUE CHECK (dni ~ '^[0-9]{8}[A-Za-z]$'),
   telefono CHAR (9) NOT NULL CHECK (telefono ~ '^[0-9]+$'),
   email VARCHAR (320),
   fecha_nacimiento DATE NOT NULL CHECK (fecha_nacimiento >= '1914-01-01' AND fecha_nacimiento <= CURRENT_DATE),
-  codigo_sc INTEGER CHECK (codigo_sc > 0) UNIQUE
+  codigo_ss INTEGER CHECK (codigo_ss > 0) UNIQUE
 );
 
 CREATE TABLE paciente_sp (
@@ -106,54 +106,53 @@ CREATE TABLE farmaceutica (
 
 -- Relaciones
 
-CREATE TABLE consultas_sc (
-  historia_clinica SERIAL REFERENCES paciente_sc(historia_clinica),
-  colegiado SERIAL REFERENCES personal(colegiado),
+CREATE TABLE consultas_ss (
+  historia_clinica SERIAL REFERENCES paciente_ss(historia_clinica) ON DELETE CASCADE,
+  colegiado SERIAL REFERENCES personal(colegiado) ON DELETE CASCADE,
   total_pago FLOAT,
-  fecha DATE NOT NULL,
+  fecha DATE NOT NULL CHECK (fecha >= '1914-01-01' AND fecha <= CURRENT_DATE),
   diagnostico TEXT NOT NULL
 );
 
 CREATE TABLE consultas_sp (
-  historia_clinica SERIAL REFERENCES paciente_sp(historia_clinica),
-  colegiado SERIAL REFERENCES personal(colegiado),
+  historia_clinica SERIAL REFERENCES paciente_sp(historia_clinica) ON DELETE CASCADE,
+  colegiado SERIAL REFERENCES personal(colegiado) ON DELETE CASCADE,
   total_pago FLOAT,
-  fecha DATE NOT NULL,
+  fecha DATE NOT NULL CHECK (fecha >= '1914-01-01' AND fecha <= CURRENT_DATE),
   diagnostico TEXT NOT NULL
 );
 
 CREATE TABLE material_hospital (
-  lote SERIAL PRIMARY KEY,
   id_hospital SERIAL REFERENCES hospital(id_hospital) ON DELETE CASCADE NOT NULL,
-  id_material SERIAL REFERENCES material(id_material) NOT NULL,
+  id_material SERIAL REFERENCES material(id_material) ON DELETE CASCADE NOT NULL,
   cantidad INTEGER
 );
 
 CREATE TABLE contrato (
-  colegiado SERIAL REFERENCES personal(colegiado) NOT NULL,
+  colegiado SERIAL REFERENCES personal(colegiado) ON DELETE CASCADE NOT NULL,
   id_hospital SERIAL REFERENCES hospital(id_hospital) ON DELETE CASCADE NOT NULL,
-  fecha_inicio DATE NOT NULL,
-  fecha_fin DATE,
+  fecha_inicio DATE NOT NULL CHECK (fecha_inicio >= '1914-01-01' AND fecha_inicio <= CURRENT_DATE),
+  fecha_fin DATE CHECK (fecha_fin >= '1914-01-01' AND fecha_fin <= CURRENT_DATE),
   horas_semanales INTEGER CHECK (horas_semanales >= 5 AND horas_semanales <= 40) NOT NULL,
   sueldo FLOAT NOT NULL
 );
 
-CREATE TABLE cita_sc (
-  historia_clinica SERIAL REFERENCES paciente_sc(historia_clinica) ON DELETE CASCADE NOT NULL,
+CREATE TABLE cita_ss (
+  historia_clinica SERIAL REFERENCES paciente_ss(historia_clinica) ON DELETE CASCADE NOT NULL,
   colegiado SERIAL REFERENCES personal(colegiado) ON DELETE CASCADE NOT NULL,
   id_hospital SERIAL REFERENCES hospital(id_hospital) ON DELETE CASCADE NOT NULL,
-  fecha DATE
+  fecha DATE CHECK (fecha >= '1914-01-01')
 );
 
 CREATE TABLE cita_sp (
   historia_clinica SERIAL REFERENCES paciente_sp(historia_clinica) ON DELETE CASCADE NOT NULL,
   colegiado SERIAL REFERENCES personal(colegiado) ON DELETE CASCADE NOT NULL,
   id_hospital SERIAL REFERENCES hospital(id_hospital) ON DELETE CASCADE NOT NULL,
-  fecha DATE
+  fecha DATE CHECK (fecha >= '1914-01-01')
 );
 
 CREATE TABLE uso_material_planta (
-  id_planta SERIAL REFERENCES planta(id_planta) NOT NULL,
-  id_material SERIAL REFERENCES material(id_material) NOT NULL,
+  id_planta SERIAL REFERENCES planta(id_planta) ON DELETE CASCADE NOT NULL,
+  id_material SERIAL REFERENCES material(id_material) ON DELETE CASCADE NOT NULL,
   cantidad_suministrada INTEGER NOT NULL
 );
