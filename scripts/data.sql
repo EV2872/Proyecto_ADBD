@@ -1,3 +1,14 @@
+/*
+ * Autores: 
+ *          Alejandro García Bautista 
+ *          Evian Concepcion Peña 
+ *          Edwin Plasencia Hernández
+ * Asignatura: Administración y Diseño de Bases de Datos
+ * Proyecto Final de la Asignatura
+ * Resumen: Script que realiza las inserciones de prueba en la base de datos para realizar las consultas
+ *          de testeo
+ */
+
 -- Insertar datos para paciente_ss
 INSERT INTO paciente_ss (nombre, dni, telefono, email, fecha_nacimiento, codigo_ss)
 VALUES

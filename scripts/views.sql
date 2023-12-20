@@ -1,3 +1,14 @@
+/*
+ * Autores: 
+ *          Alejandro García Bautista 
+ *          Evian Concepcion Peña 
+ *          Edwin Plasencia Hernández
+ * Asignatura: Administración y Diseño de Bases de Datos
+ * Proyecto Final de la Asignatura
+ * Resumen: Script que crea vistas para simular los entornos de los
+ *          usuarios
+ */
+
 CREATE VIEW vista_stock_hospital AS
 SELECT
   h.id_hospital,

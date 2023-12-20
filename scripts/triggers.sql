@@ -1,3 +1,13 @@
+/*
+ * Autores: 
+ *          Alejandro García Bautista 
+ *          Evian Concepcion Peña 
+ *          Edwin Plasencia Hernández
+ * Asignatura: Administración y Diseño de Bases de Datos
+ * Proyecto Final de la Asignatura
+ * Resumen: Script para la creación de los triggers
+ */
+
 -- Triggers
 CREATE OR REPLACE FUNCTION check_contrato()
 RETURNS TRIGGER AS $$

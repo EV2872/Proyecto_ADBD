@@ -1,3 +1,13 @@
+'''
+Autores: 
+        Alejandro García Bautista 
+        Evian Concepcion Peña 
+        Edwin Plasencia Hernández
+Asignatura: Administración y Diseño de Bases de Datos
+Proyecto Final de la Asignatura
+Resumen: API realizada con Python3.8.9, Flask y psycopg2 para poder realizar consultas a una base de datos en PostgreSQL
+'''
+
 import psycopg2
 from flask import Flask, request, jsonify, Response
 from psycopg2 import OperationalError
@@ -671,4 +681,3 @@ def gestion_citas():
                        status=400, mimetype='application/json')
   else:
     return Response("{'msg': 'Verbo no valido'}", status=401, mimetype='application/json')
-

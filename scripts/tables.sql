@@ -1,3 +1,13 @@
+/*
+ * Autores: 
+ *          Alejandro García Bautista 
+ *          Evian Concepcion Peña 
+ *          Edwin Plasencia Hernández
+ * Asignatura: Administración y Diseño de Bases de Datos
+ * Proyecto Final de la Asignatura
+ * Resumen: Script que crea las diferentes tablas de la base de datos
+ */
+
 -- SECUENCIAS
 CREATE SEQUENCE n_historia_clinica;
 
